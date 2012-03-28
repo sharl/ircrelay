@@ -1,0 +1,12 @@
+* ircrelay - notify message to IRC channel
+
+* ~/.ircrelay format
+
+server = somewhere.example.com
+port   = 6667
+pass   = password
+nick   = foobar
+
+* usage
+
+$ ircrelay "#hacktheirc" "this is test message"

@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+# -*- Mode: perl -*-
+
+use strict;
+use warnings;
+use Config::Tiny;
+use Net::IRC;
+use File::Basename;
+use Data::Dumper;
+
+# Use no Carp messages.
+$SIG{__WARN__} = sub {};
+
+my $ini = Config::Tiny->read($ENV{HOME} . '/.ircrelay');
+
+my $SERVER = $ini->{_}->{server};
+my $PORT   = $ini->{_}->{port};
+my $PASS   = $ini->{_}->{pass};
+my $NICK   = $ini->{_}->{nick};
+
+if ($#ARGV != 1) {
+    print STDERR "usage: " . basename($0) . " <channel> <message>\n";
+    exit 1;
+}
+my ($channel, $message) = @ARGV;
+
+my $irc = new Net::IRC;
+my $conn = $irc->newconn(
+    Server => $SERVER,
+    Port => $PORT,
+    Password => $PASS,
+    Nick => $NICK
+    ); 	
+sub on_connect {
+    my $self = shift;
+
+    $self->join($channel);
+    $self->notice($channel, $message);
+    exit;
+}
+$conn->add_handler('endofmotd', \&on_connect);
+$irc->start;
