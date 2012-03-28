@@ -19,10 +19,14 @@ my $PASS   = $ini->{_}->{pass};
 my $NICK   = $ini->{_}->{nick};
 
 if ($#ARGV != 1) {
-    print STDERR "usage: " . basename($0) . " <channel> <message>\n";
+    print STDERR "usage: " . basename($0) . " <channel> <message | ->\n";
     exit 1;
 }
 my ($channel, $message) = @ARGV;
+my @messages;
+if ($message eq '-') {
+    @messages = <STDIN>;
+}
 
 my $irc = new Net::IRC;
 my $conn = $irc->newconn(
@@ -35,7 +39,14 @@ sub on_connect {
     my $self = shift;
 
     $self->join($channel);
-    $self->notice($channel, $message);
+    if ($#messages >= 0) {
+	for (@messages) {
+	    $self->notice($channel, $_);
+	    sleep(1); # avoid flood
+	}
+    } else {
+	$self->notice($channel, $message);
+    }
     exit;
 }
 $conn->add_handler('endofmotd', \&on_connect);

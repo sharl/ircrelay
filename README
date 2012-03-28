@@ -10,3 +10,4 @@ nick   = foobar
 * usage
 
 $ ircrelay "#hacktheirc" "this is test message"
+$ cat README | ircrelay "#hacktheirc" -
