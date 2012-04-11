@@ -3,25 +3,31 @@
 
 use strict;
 use warnings;
+use File::Basename qw(basename);
 use Config::Tiny;
 use Net::IRC;
-use File::Basename;
-use Data::Dumper;
 
 # Use no Carp messages.
 $SIG{__WARN__} = sub {};
 
-my $ini = Config::Tiny->read($ENV{HOME} . '/.ircrelay');
+my $prog = basename($0);
+my $conf = "$ENV{HOME}/.$prog";
+my $ini  = Config::Tiny->read($conf);
 
-my $SERVER = $ini->{_}->{server};
-my $PORT   = $ini->{_}->{port};
+my $SERVER = $ini->{_}->{server} || 'localhost';
+my $PORT   = $ini->{_}->{port}   || 6667;
 my $PASS   = $ini->{_}->{pass};
 my $NICK   = $ini->{_}->{nick};
 
 if ($#ARGV != 1) {
-    print STDERR "usage: " . basename($0) . " <channel> <message | ->\n";
+    print STDERR "usage: $prog <channel> <message | ->\n";
     exit 1;
 }
+if (! $NICK) {
+    print STDERR "Please make sure \033[1mnick\033[m is set in \033[1m$conf\033[m\n";
+    exit 1;
+}
+
 my ($channel, $message) = @ARGV;
 my @messages;
 if ($message eq '-') {
@@ -39,8 +45,8 @@ sub on_connect {
     my $self = shift;
 
     $self->join($channel);
-    if ($#messages >= 0) {
-	for (@messages) {
+    if (@messages) {
+	foreach (@messages) {
 	    $self->notice($channel, $_);
 	    sleep(1); # avoid flood
 	}
