@@ -9,7 +9,7 @@ nick   = foobar
 
 * usage
 
-ircrelay [-p] [-f conf] <channel> [message]
+ircrelay [-p] [-f conf] [-k password] <channel> [message]
 
 $ ircrelay "#hacktheirc" "this is test message"
 $ ircrelay -p "#hacktheirc" "this is the message use PRIVMSG instead of NOTICE"
