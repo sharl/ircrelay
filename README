@@ -9,5 +9,9 @@ nick   = foobar
 
 * usage
 
+ircrelay [-p] [-f conf] <channel> [message]
+
 $ ircrelay "#hacktheirc" "this is test message"
-$ cat README | ircrelay "#hacktheirc" -
+$ ircrelay -p "#hacktheirc" "this is the message use PRIVMSG instead of NOTICE"
+$ ircrelay -f conf "#hacktheirc" "use conf instead of ~/.ircrelay"
+$ cat README | ircrelay "#hacktheirc"

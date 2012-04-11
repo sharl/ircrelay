@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use File::Basename qw(basename);
 use Config::Tiny;
+use Getopt::Long;
 use Net::IRC;
 
 # Use no Carp messages.
@@ -12,6 +13,9 @@ $SIG{__WARN__} = sub {};
 
 my $prog = basename($0);
 my $conf = "$ENV{HOME}/.$prog";
+my $privmsg;
+goto usage unless GetOptions('privmsg' => \$privmsg,
+			     'file=s'  => \$conf    );
 my $ini  = Config::Tiny->read($conf);
 
 my $SERVER = $ini->{_}->{server} || 'localhost';
@@ -20,7 +24,7 @@ my $PASS   = $ini->{_}->{pass};
 my $NICK   = $ini->{_}->{nick};
 
 if (! @ARGV) {
-    print STDERR "usage: $prog <channel> [message]\n";
+  usage: print STDERR "usage: $prog [-p] [-f conf] <channel> [message]\n";
     exit 1;
 }
 if (! $NICK) {
@@ -47,11 +51,11 @@ sub on_connect {
     $self->join($channel);
     if (@messages) {
 	foreach (@messages) {
-	    $self->notice($channel, $_);
+	    $privmsg ? $self->privmsg($channel, $_) : $self->notice($channel, $_);
 	    sleep(1); # avoid flood
 	}
     } else {
-	$self->notice($channel, $message);
+	$privmsg ? $self->privmsg($channel, $message) : $self->notice($channel, $message);
     }
     exit;
 }
