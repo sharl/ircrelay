@@ -19,8 +19,8 @@ my $PORT   = $ini->{_}->{port}   || 6667;
 my $PASS   = $ini->{_}->{pass};
 my $NICK   = $ini->{_}->{nick};
 
-if ($#ARGV != 1) {
-    print STDERR "usage: $prog <channel> <message | ->\n";
+if (! @ARGV) {
+    print STDERR "usage: $prog <channel> [message]\n";
     exit 1;
 }
 if (! $NICK) {
@@ -30,8 +30,8 @@ if (! $NICK) {
 
 my ($channel, $message) = @ARGV;
 my @messages;
-if ($message eq '-') {
-    @messages = <STDIN>;
+if (! $message) {
+    @messages = map {chomp; $_} <STDIN>;
 }
 
 my $irc = new Net::IRC;
