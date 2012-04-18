@@ -4,14 +4,17 @@
 
 server = somewhere.example.com
 port   = 6667
+; if use SSL connection
+;ssl    = yes
 pass   = password
 nick   = foobar
 
 * usage
 
-ircrelay [-p] [-f conf] [-k password] <channel> [message]
+ircrelay [-a] [-p] [-f conf] [-k password] <channel> [message]
 
 $ ircrelay "#hacktheirc" "this is test message"
+$ ircrelay -a "#hacktheirc" "this is ACTION message instead of NOTICE"
 $ ircrelay -p "#hacktheirc" "this is the message use PRIVMSG instead of NOTICE"
 $ ircrelay -f conf "#hacktheirc" "use conf instead of ~/.ircrelay"
 $ cat README | ircrelay "#hacktheirc"

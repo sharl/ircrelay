@@ -13,19 +13,22 @@ $SIG{__WARN__} = sub {};
 
 my $prog = basename($0);
 my $conf = "$ENV{HOME}/.$prog";
-my ($privmsg, $chpass);
-goto usage unless GetOptions('privmsg'      => \$privmsg,
-			     'file=s'       => \$conf,
-			     'password|k=s' => \$chpass  );
+my ($action, $privmsg, $chpass);
+goto usage unless GetOptions('action'  => \$action,
+			     'privmsg' => \$privmsg,
+			     'file=s'  => \$conf,
+			     'key=s'   => \$chpass  );
+undef $privmsg if ($action);
 my $ini  = Config::Tiny->read($conf);
 
-my $SERVER = $ini->{_}->{server} || 'localhost';
-my $PORT   = $ini->{_}->{port}   || 6667;
-my $PASS   = $ini->{_}->{pass};
-my $NICK   = $ini->{_}->{nick};
+my $SERVER  = $ini->{_}->{server} || 'localhost';
+my $PORT    = $ini->{_}->{port}   || 6667;
+my $USE_SSL = $ini->{_}->{ssl};
+my $PASS    = $ini->{_}->{pass};
+my $NICK    = $ini->{_}->{nick};
 
 if (! @ARGV) {
-  usage: print STDERR "usage: $prog [-p] [-f conf] [-k password] <channel> [message]\n";
+  usage: print STDERR "usage: $prog [-a] [-p] [-f conf] [-k password] <channel> [message]\n";
     exit 1;
 }
 if (! $NICK) {
@@ -43,6 +46,7 @@ my $irc = new Net::IRC;
 my $conn = $irc->newconn(
     Server => $SERVER,
     Port => $PORT,
+    SSL => $USE_SSL,
     Password => $PASS,
     Nick => $NICK
     ); 	
@@ -52,11 +56,15 @@ sub on_connect {
     $self->join($channel, $chpass);
     if (@messages) {
 	foreach (@messages) {
-	    $privmsg ? $self->privmsg($channel, $_) : $self->notice($channel, $_);
+	    $privmsg ? $self->privmsg($channel, $_)
+		: $action ? $self->me($channel, $_)
+		: $self->notice($channel, $_);
 	    sleep(1); # avoid flood
 	}
     } else {
-	$privmsg ? $self->privmsg($channel, $message) : $self->notice($channel, $message);
+	$privmsg ? $self->privmsg($channel, $message)
+	    : $action ? $self->me($channel, $message)
+	    : $self->notice($channel, $message);
     }
     exit;
 }

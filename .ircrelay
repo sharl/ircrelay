@@ -1,4 +1,6 @@
 server = somewhere.example.com
 port   = 6667
+; if use SSL connection
+;ssl    = yes
 pass   = password
 nick   = foobar
