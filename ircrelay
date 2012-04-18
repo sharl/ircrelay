@@ -37,6 +37,7 @@ if (! $NICK) {
 }
 
 my ($channel, @message) = @ARGV;
+goto usage unless $channel;
 my $message = join(' ', @message);
 my @messages;
 if (! $message) {
