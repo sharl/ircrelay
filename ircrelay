@@ -36,7 +36,8 @@ if (! $NICK) {
     exit 1;
 }
 
-my ($channel, $message) = @ARGV;
+my ($channel, @message) = @ARGV;
+my $message = join(' ', @message);
 my @messages;
 if (! $message) {
     @messages = map {chomp; $_} <STDIN>;
