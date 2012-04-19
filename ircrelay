@@ -12,9 +12,15 @@ use Net::IRC;
 $SIG{__WARN__} = sub {};
 
 my $prog = basename($0);
+
+sub usage {
+    print STDERR "usage: $prog [-a] [-p] [-f conf] [-k password] <channel> [message]\n";
+    exit 1;
+}
+
 my $conf = "$ENV{HOME}/.$prog";
 my ($action, $privmsg, $chpass);
-goto usage unless GetOptions('action'  => \$action,
+&usage unless GetOptions('action'  => \$action,
 			     'privmsg' => \$privmsg,
 			     'file=s'  => \$conf,
 			     'key=s'   => \$chpass  );
@@ -27,17 +33,14 @@ my $USE_SSL = $ini->{_}->{ssl};
 my $PASS    = $ini->{_}->{pass};
 my $NICK    = $ini->{_}->{nick};
 
-if (! @ARGV) {
-  usage: print STDERR "usage: $prog [-a] [-p] [-f conf] [-k password] <channel> [message]\n";
-    exit 1;
-}
+&usage unless @ARGV;
 if (! $NICK) {
     print STDERR "Please make sure \033[1mnick\033[m is set in \033[1m$conf\033[m\n";
     exit 1;
 }
 
 my ($channel, @message) = @ARGV;
-goto usage unless $channel;
+&usage unless $channel;
 my $message = join(' ', @message);
 my @messages;
 if (! $message) {
