@@ -6,10 +6,7 @@ use warnings;
 use File::Basename qw(basename);
 use Config::Tiny;
 use Getopt::Long;
-use Net::IRC;
-
-# Use no Carp messages.
-$SIG{__WARN__} = sub {};
+use POE qw(Component::IRC);
 
 my $prog = basename($0);
 
@@ -21,11 +18,11 @@ sub usage {
 my $conf = "$ENV{HOME}/.$prog";
 my ($action, $privmsg, $chpass);
 &usage unless GetOptions('action'  => \$action,
-			     'privmsg' => \$privmsg,
-			     'file=s'  => \$conf,
-			     'key=s'   => \$chpass  );
+			 'privmsg' => \$privmsg,
+			 'file=s'  => \$conf,
+			 'key=s'   => \$chpass  );
 undef $privmsg if ($action);
-my $ini  = Config::Tiny->read($conf);
+my $ini = Config::Tiny->read($conf);
 
 my $SERVER  = $ini->{_}->{server} || 'localhost';
 my $PORT    = $ini->{_}->{port}   || 6667;
@@ -47,31 +44,55 @@ if (! $message) {
     @messages = map {chomp; $_} <STDIN>;
 }
 
-my $irc = new Net::IRC;
-my $conn = $irc->newconn(
-    Server => $SERVER,
-    Port => $PORT,
-    SSL => $USE_SSL,
+my $irc = POE::Component::IRC->spawn(
+    Server   => $SERVER,
+    Port     => $PORT,
+    UseSSL   => $USE_SSL,
     Password => $PASS,
-    Nick => $NICK
-    ); 	
-sub on_connect {
-    my $self = shift;
+    Nick     => $NICK,
+    Ircname  => $NICK,
+    ) or die $!;
 
-    $self->join($channel, $chpass);
+POE::Session->create(
+    package_states => [
+	main => [ qw(_start irc_001 irc_ping) ],
+    ],
+    heap => { irc => $irc },
+    );
+
+sub _start {
+    my $heap = $_[HEAP];
+    my $irc = $heap->{irc};
+
+    $irc->yield(register => 'all');
+    $irc->yield(connect => {});
+}
+
+sub irc_001 {
+    my ($kernel, $sender) = @_[KERNEL, SENDER];
+
+    if ($chpass) {
+	$kernel->post($sender => join => $channel => $chpass);
+    } else {
+	$kernel->post($sender => join => $channel);
+    }
+
     if (@messages) {
 	foreach (@messages) {
-	    $privmsg ? $self->privmsg($channel, $_)
-		: $action ? $self->me($channel, $_)
-		: $self->notice($channel, $_);
+	    $privmsg ? $kernel->post($sender => privmsg => $channel => $_)
+		: $action ? $kernel->post($sender => ctcp => $channel => "ACTION $_")
+		: $kernel->post($sender => notice => $channel => $_);
 	    sleep(1); # avoid flood
 	}
     } else {
-	$privmsg ? $self->privmsg($channel, $message)
-	    : $action ? $self->me($channel, $message)
-	    : $self->notice($channel, $message);
+	$privmsg ? $kernel->post($sender => privmsg => $channel => $message)
+	    : $action ? $kernel->post($sender => ctcp => $channel => "ACTION $message")
+	    : $kernel->post($sender => notice => $channel => $message);
     }
-    exit;
 }
-$conn->add_handler('endofmotd', \&on_connect);
-$irc->start;
+
+sub irc_ping {
+    $poe_kernel->signal($poe_kernel, 'POCOIRC_SHUTDOWN');
+}
+
+$poe_kernel->run();
