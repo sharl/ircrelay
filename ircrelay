@@ -79,6 +79,7 @@ sub irc_001 {
 
     if (@messages) {
 	foreach (@messages) {
+	    next unless $_;
 	    $privmsg ? $kernel->post($sender => privmsg => $channel => $_)
 		: $action ? $kernel->post($sender => ctcp => $channel => "ACTION $_")
 		: $kernel->post($sender => notice => $channel => $_);
