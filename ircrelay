@@ -43,6 +43,7 @@ my @messages;
 if (! $message) {
     @messages = map {chomp; $_} <STDIN>;
 }
+exit if (! $message && ! @messages);
 
 my $irc = POE::Component::IRC->spawn(
     Server   => $SERVER,
